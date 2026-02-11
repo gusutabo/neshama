@@ -3,6 +3,7 @@
 
 #include "../include/lexer.h"
 #include "../include/parser.h"
+#include "../include/colors.h"
 
 int main() {
     char line[256];
@@ -12,10 +13,8 @@ int main() {
     
     env_init(&env);
 
-    printf("Neshama - REPL\n");
-
     while (1) {
-        printf("> ");
+        printf(COLOR_BLUE ">>> " COLOR_RESET);
 
         if (!fgets(line, sizeof(line), stdin)) {
             break;

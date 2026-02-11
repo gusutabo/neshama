@@ -8,7 +8,7 @@ typedef struct {
     Environment *env;
 } Parser;
 
-void parser_init(Parser *p, Environment *env);
-void parser_parse(Parser *p);
+void parser_init(Parser *parser, Environment *env);
+void parser_parse(Parser *parser);
 
 #endif

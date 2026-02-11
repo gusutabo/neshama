@@ -5,109 +5,132 @@
 #include "../include/lexer.h"
 #include "../include/symbols.h"
 #include "../include/parser.h"
+#include "../include/colors.h"
 
-void next(Parser *p) {
-    p->current = getToken();
+static void next(Parser *parser) {
+    parser->current = getToken();
 }
 
-void error(Parser *p, const char *msg) {
-    printf("Syntax error: %s\n", msg);
-    printf("Actual token: '%s'\n", p->current.text);
+static void error(Parser *parser, const char *msg) {
+    fprintf(stderr, COLOR_RED "Syntax error: %s\n" COLOR_RESET, msg);
+    fprintf(stderr, COLOR_YELLOW "Actual token: '%s'\n" COLOR_RESET, parser->current.text);
+    exit(EXIT_FAILURE);
 }
 
-void expect(Parser *p, TokenType type, const char *msg) {
-    if (p->current.type != type) {
-        error(p, msg);
+static void expect(Parser *parser, TokenType type, const char *msg) {
+    if (parser->current.type != type) {
+        error(parser, msg);
     }
     
-    next(p);
+    next(parser);
 }
 
-int factor(Parser *p) {
-    int result;
-    
-    if (p->current.type == TOKEN_NUM) {
-        result = atoi(p->current.text);
-        next(p);
-    } else if (p->current.type == TOKEN_ID) {
-        result = env_get(p->env, p->current.text);
-        next(p);
-    } else {
-        error(p, "Expected a number or a identifier symbol;");
-    }
-    
-    return result;
-}
-
-int term(Parser *p) {
-    int result = factor(p);
-    
-    while (p->current.type == TOKEN_MUL || 
-        p->current.type == TOKEN_DIV) {
-            TokenType op = p->current.type;
-            next(p);
-            
-            int right = factor(p);
-            
-            if (op == TOKEN_MUL) {
-                result *= right;
-            } else {
-                result /= right;
-            }
-    }
-    
-    return result;
-}
-
-int expression(Parser *p) {
-    int result = term(p);
-    
-    while (p->current.type == TOKEN_PLUS || 
-        p->current.type == TOKEN_MINUS) {
-            TokenType op = p->current.type;
-            next(p);
-            
-            int right = term(p);
-            
-            if (op == TOKEN_PLUS) {
-                result += right;
-            } else {
-                result -= right;
-            }
-        }
-        
+int parse_factor(Parser *parser) {
+    if (parser->current.type == TOKEN_NUM) {
+        int result = atoi(parser->current.text);
+        next(parser);
         return result;
     }
     
-void statement(Parser *p) {
-    if (p->current.type == TOKEN_ID) {
-        char name[32];
-        strcpy(name, p->current.text);
-        next(p);
+    if (parser->current.type == TOKEN_ID) {
+        int result = env_get(parser->env, parser->current.text);
+        next(parser);
+        return result;
+    } 
+
+    error(parser, "Expected a number or a identifier symbol;");
+    return 0;
+}
+
+int parse_term(Parser *parser) {
+    int result = parse_factor(parser);
+    
+    while (parser->current.type == TOKEN_MUL || 
+           parser->current.type == TOKEN_DIV) {
         
-        expect(p, TOKEN_EQ, "Expected a '='");
+        TokenType operator_type = parser->current.type;
+        next(parser);
+            
+        int right_value = parse_factor(parser);
         
-        int value = expression(p);
-        env_set(p->env, name, value);
+        switch (operator_type) {
+            case TOKEN_MUL:
+                result *= right_value;
+                break;
+                
+            case TOKEN_DIV:
+                if (right_value == 0) {
+                    error(parser, "This isn't possible.");
+                }
+                result /= right_value;
+                break;
+        }
+    }
+    
+    return result;
+}
+
+int parse_expression(Parser *parser) {
+    int result = parse_term(parser);
+    
+    while (parser->current.type == TOKEN_PLUS || 
+          parser->current.type == TOKEN_MINUS) {
+        TokenType operator_type = parser->current.type;
+        next(parser);
+            
+        int right_value = parse_term(parser);
+            
+        switch (operator_type) {
+            case TOKEN_PLUS:
+                result += right_value;
+                break;
+
+            case TOKEN_MINUS:
+                result -= right_value;
+                break;
+        }
+    }
         
-        expect(p, TOKEN_SEMI, "Expected a ';'");        
-    } else if (p->current.type == TOKEN_PRINT) {
-        next(p);
-        
-        int value = expression(p);
-        
-        expect(p, TOKEN_SEMI, "Expected a ';'");
-        printf("%d\n", value);
+    return result;
+}
+    
+static void parse_assignment(Parser *parser) {
+    char variable_name[32];
+    strcpy(variable_name, parser->current.text);
+    
+    next(parser);
+    expect(parser, TOKEN_EQ, "Expected a '='");
+    
+    int value = parse_expression(parser);
+    env_set(parser->env, variable_name, value);
+    
+    expect(parser, TOKEN_SEMI, "Expected a ';'");        
+}
+
+static void parse_print(Parser *parser) {
+    next(parser);
+    
+    int value = parse_expression(parser);
+    
+    expect(parser, TOKEN_SEMI, "Expected a ';'");
+    printf("%d\n", value);
+}
+
+void parse_statement(Parser *parser) {
+    switch (parser->current.type) {
+        case TOKEN_ID: parse_assignment(parser); break;
+        case TOKEN_PRINT: parse_print(parser); break;
+        default: error(parser, "Unexpected statement"); break;
     }
 }
 
-void parser_init(Parser *p, Environment *env) {
-    p->env = env;
-    next(p);
+void parser_init(Parser *parser, Environment *env) {
+    parser->env = env;
+    next(parser);
 }
 
-void parser_parse(Parser *p) {
-    while (p->current.type != TOKEN_EOF) {
-        statement(p);
+void parser_parse(Parser *parser) {
+    while (parser->current.type != TOKEN_EOF) {
+        parse_statement(parser);
     }
 }
