@@ -1,4 +1,4 @@
-# Mini Interpreter in C
+# Neshama
 
 A simple interpreter written in C for mathematical expressions.
 
