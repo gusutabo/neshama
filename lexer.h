@@ -19,6 +19,7 @@ typedef struct {
     char text[32];
 } Token;
 
+void setInput(char *text);
 Token getToken();
 
 #endif

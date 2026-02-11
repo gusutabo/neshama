@@ -3,16 +3,42 @@
 #include <string.h>
 #include "lexer.h"
 
+static char *source;
+static int pos;
+
+void setInput(char *text) {
+    source = text;
+    pos = 0;
+}
+
+static char peek() {
+    return source[pos];
+}
+
+static char advance() {
+    return source[pos++];
+}
+
 Token getToken() {
-    static int c = ' ';
     Token t;
+    t.text[0] = '\0';
+
+    while (isspace(peek())) {
+        advance();
+    }
+
+    char c = peek();
+
+    if (c == '\0') {
+        t.type = TOKEN_EOF;
+        return t;
+    }
 
     if (isalpha(c)) {
         int i = 0;
 
-        while (isalpha(c)) {
-            t.text[i++] = c;
-            c = getchar();
+        while (isalnum(peek())) {
+            t.text[i++] = advance();
         }
 
         t.text[i] = '\0';
@@ -29,58 +55,27 @@ Token getToken() {
     if (isdigit(c)) {
         int i = 0;
 
-        while (isdigit(c))
+        while (isdigit(peek()))
         {
-            t.text[i++] = c;
-            c = getchar();
+            t.text[i++] = advance();
         }
 
         t.text[i] = '\0';
         t.type = TOKEN_NUM;
         return t;
     }
+
+    advance();
     
-    if (c == '+') {
-        c = getchar();
-        t.type = TOKEN_PLUS;
-        return t;
-    }
-
-    if (c == '-') {
-        c = getchar();
-        t.type = TOKEN_MINUS;
-        return t;
-    }
-
-      if (c == '*') {
-        c = getchar();
-        t.type = TOKEN_MUL;
-        return t;
-    }
-
-    if (c == '/') {
-        c = getchar();
-        t.type = TOKEN_DIV;
-        return t;
-    }
-
-    if (c == ';') {
-        c = getchar();
-        t.type = TOKEN_SEMI;
-        return t;
-    }
-
-    if (c == '=') {
-        c = getchar();
-        t.type = TOKEN_EQ;
-        return t;
+    switch (c) {
+        case '+': t.type = TOKEN_PLUS; break;
+        case '-': t.type = TOKEN_MINUS; break;
+        case '*': t.type = TOKEN_MUL; break;
+        case '/': t.type = TOKEN_DIV; break;
+        case '=': t.type = TOKEN_EQ; break;
+        case ';': t.type = TOKEN_SEMI; break;
+        default: t.type = TOKEN_EOF; break;
     }
     
-    if (c == EOF) {
-        t.type = TOKEN_EOF;
-        return t;
-    }
-
-    c = getchar();
-    return getToken();
+    return t;
 }

@@ -110,8 +110,5 @@ void statement() {
 
 void parse() {
     next();
-
-    while (current.type != TOKEN_EOF) {
-        statement();
-    }
+    statement();
 }
