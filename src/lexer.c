@@ -35,6 +35,18 @@ Token getToken() {
         return t;
     }
 
+    if (c == '/' && source[pos + 1] == '/') {
+        while (peek() != '\n' && peek() != '\0') {
+            advance();
+        }
+
+        while (isspace(peek())) {
+            advance();
+        }
+
+        c = peek();
+    }
+
     if (isalpha(c)) {
         int i = 0;
 
