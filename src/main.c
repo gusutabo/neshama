@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "../include/lexer.h"
 #include "../include/parser.h"
@@ -14,9 +15,11 @@ int main() {
     env_init(&env);
 
     while (1) {
-        printf(COLOR_BLUE ">>> " COLOR_RESET);
-
-        if (!fgets(line, sizeof(line), stdin)) {
+        if (isatty(fileno(stdin))) {
+            printf(COLOR_BLUE ">>> " COLOR_RESET);
+        }
+        
+        if (fgets(line, sizeof(line), stdin) == NULL) {
             break;
         }
 

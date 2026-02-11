@@ -20,66 +20,60 @@ static char advance() {
     return source[pos++];
 }
 
-Token getToken() {
-    Token t;
-    t.text[0] = '\0';
-
+static void skip_whitespace() {
     while (isspace(peek())) {
         advance();
     }
+}
+static void skip_comment() {
+    if (peek() == '/' && source[pos + 1] == '/') {
+        advance();
+        advance();
 
-    char c = peek();
-
-    if (c == '\0') {
-        t.type = TOKEN_EOF;
-        return t;
-    }
-
-    if (c == '/' && source[pos + 1] == '/') {
         while (peek() != '\n' && peek() != '\0') {
             advance();
         }
+    }
+}
 
-        while (isspace(peek())) {
-            advance();
-        }
+static Token lex_number() {
+    Token t;
+    int i = 0;
 
-        c = peek();
+    while (isdigit(peek())) {
+        t.text[i++] = advance();
     }
 
-    if (isalpha(c)) {
-        int i = 0;
+    t.text[i] = '\0';
+    t.type = TOKEN_NUM;
+    return t;
+}
 
-        while (isalnum(peek())) {
-            t.text[i++] = advance();
-        }
+static Token lex_identifier() {
+    Token t;
+    int i = 0;
 
-        t.text[i] = '\0';
-
-        if (strcmp(t.text, "print") == 0) {
-            t.type = TOKEN_PRINT;
-        } else {
-            t.type = TOKEN_ID;
-        }
-
-        return t;
+    while (isalnum(peek())) {
+        t.text[i++] = advance();
     }
 
-    if (isdigit(c)) {
-        int i = 0;
+    t.text[i] = '\0';
 
-        while (isdigit(peek()))
-        {
-            t.text[i++] = advance();
-        }
-
-        t.text[i] = '\0';
-        t.type = TOKEN_NUM;
-        return t;
+    if (strcmp(t.text, "print") == 0) {
+        t.type = TOKEN_PRINT;
+    } else {
+        t.type = TOKEN_ID;
     }
 
-    advance();
-    
+    return t;
+}
+
+static Token symbols() {
+    Token t;
+    char c = advance();
+    t.text[0] = c;
+    t.text[1] = '\0';
+
     switch (c) {
         case '+': t.type = TOKEN_PLUS; break;
         case '-': t.type = TOKEN_MINUS; break;
@@ -91,4 +85,27 @@ Token getToken() {
     }
     
     return t;
+}
+
+Token getToken() {
+    skip_whitespace();
+    skip_comment();
+    skip_whitespace();
+   
+    if (peek() == '\0') {
+        Token t;
+        t.type = TOKEN_EOF;
+        t.text[0] = '\0';
+        return t;
+    }
+
+    if (isalpha(peek())) {
+        return lex_identifier();
+    }
+
+    if (isdigit(peek())) {
+        return lex_number();
+    }
+
+    return symbols();
 }

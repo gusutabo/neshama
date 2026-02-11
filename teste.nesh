@@ -1,0 +1,5 @@
+// Testing... 1... 2... 3...
+vf = 50; // Final
+vi = 0; // Start
+v = vf - vi; // Delta
+print v; // Print it
